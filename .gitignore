@@ -3,3 +3,8 @@
 *#
 __pycache__
 *.class
+
+
+#documentation
+doc/_modules
+doc/build
