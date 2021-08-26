@@ -9,16 +9,17 @@ from clients.GhidraCommandClient import GhidraCommandClient
 
 class GhidraGdb:
 
-    """!@brief: The main class which encapsulates the whole GhidraGdb framework
+    """The main class which encapsulates the whole GhidraGdb framework
     """
 
-    FIFO = "/tmp/gdbPipe"
+
     
     def __init__(self, process=None):
         self.fifo = None
 
         self.process = process
-        
+        self.FIFO = "/tmp/gdbPipe"
+
         try:
             os.mkfifo(self.FIFO)
         except Exception as e:
@@ -36,9 +37,10 @@ class GhidraGdb:
 
     def removeBpByPattern(self, pattern):
 
-        """!@brief: removes a breakpoint before it is inserted
-        @param pattern: the pattern to identify the breakpoint
-        @return: None
+        """Removes a breakpoint before it is inserted
+
+        :param pattern: the pattern to identify the breakpoint
+        :return: None
         """
         self.removals.append(pattern)
         
@@ -46,11 +48,11 @@ class GhidraGdb:
 
     def excAndGet(self, exc, strip=True):
 
-        """!
-        @brief: This function executes a command within the gdb session
-        @param exc: String value containing the gdb command
-        @param strip: Boolean, optional - remove the EOF delimiter automatically(this might create issues in some cases) - default: True
-        @return: String value containing the gdb response unparsed
+        """This function executes a command within the gdb session
+
+        :param exc: String value containing the gdb command
+        :param strip: Boolean, optional - remove the EOF delimiter automatically(this might create issues in some cases) - default: True
+        :return: String value containing the gdb response unparsed
         """
 
         self.currRet = ""
@@ -71,9 +73,10 @@ class GhidraGdb:
     
     def readFifo(self, fifo):
 
-        """!@brief: read the ouput of the gdbPipe te receive the data
-        @param fifo: the fifo object to read from
-        @return: None
+        """read the ouput of the gdbPipe te receive the data
+
+        :param fifo: the fifo object to read from
+        :return: None
         """
 
         while True:
@@ -96,9 +99,10 @@ class GhidraGdb:
 
     def setupFifo(self, FIFO):
 
-        """!@brief: create the Fifo which is used to read the data comming from the gdb
-        @param FIFO: The filename where the fifo will be created
-        @return: None
+        """Create the Fifo which is used to read the data comming from the gdb
+
+        :param FIFO: The filename where the fifo will be created
+        :return: None
         """
 
         print("setting up fifo now: " + str(FIFO))
@@ -109,9 +113,10 @@ class GhidraGdb:
 
     def setupFifoNonBlock(self, Fifo):
 
-        """!@brief: Run the function "setupFifo" in None-blocking mode
-        @param FIFO: The filename where the fifo will be created
-        @return: None
+        """Run the function "setupFifo" in None-blocking mode
+
+        :param FIFO: The filename where the fifo will be created
+        :return: None
         """
 
         Thread(target=self.setupFifo, args=(Fifo,), daemon=True).start()
@@ -119,8 +124,9 @@ class GhidraGdb:
 
     def setupGdbInteractive(self):
 
-        """!@brief: Setup the GdbSession as an interactive shell(the user can interact with GDB as usual) - Non-blocking
-        @return: None
+        """Setup the GdbSession as an interactive shell(the user can interact with GDB as usual) - Non-blocking
+
+        :return: None
         """
 
         Thread(target=self.process.interactive).start() 
@@ -128,9 +134,10 @@ class GhidraGdb:
 
     def getProcOffset(self, procName):
 
-        """!@brief get the Proc Offset of a particular mapping
-        @param procName: String value containing the Name of the mapping
-        @return: The start Address of the mapped space
+        """Get the Proc Offset of a particular mapping
+
+        :param procName: String value containing the Name of the mapping
+        :return: The start Address of the mapped space
         """
 
         while self.checkThreadRunning():
@@ -171,12 +178,12 @@ class GhidraGdb:
     
     def run(self, cmd, interactive=True, startCommands="", args=""):
 
-        """!@brief: This is the entry functioon that spawns a new process and connects the debugger to it
-        @param cmd: String value containing the path to your executable
-        @param interactive: Boolean, optional - open a regular GDB Window which the user can interact with. Default: True
-        @param startCommands: Sting - Initial GDB Commands which are executed before the program starts
-        @param args: String - Arguments to start the executable with
-        @return: None
+        """This is the entry function that spawns a new process and connects the debugger to it
+
+        :param String cmd: value containing the path to your executable
+        :param Boolean interactive: optional - open a regular GDB Window which the user can interact with. Default: True
+        :param String startCommands: optional - Initial GDB Commands which are executed before the program starts
+        :param String args: - Arguments to start the executable with
         """
 
         #connect reader thread to read gdb pipe
@@ -254,9 +261,10 @@ class GhidraGdb:
     def setupGdb(self, interactive=True, startCommands=""):
 
         """ Deprecated - attaches the gdb to an existing program instance instead of spawning the program
-        @param interactive: interactive: Boolean, optional - open a regular GDB Window which the user can interact with. Default: True
-        @param startCommands: Sting - Initial GDB Commands which are executed before the program starts
-        @return: None
+
+        :param interactive: interactive: Boolean, optional - open a regular GDB Window which the user can interact with. Default: True
+        :param startCommands: Sting - Initial GDB Commands which are executed before the program starts
+        :return: None
         """
 
         #connect reader thread to read gdb pipe
@@ -275,9 +283,10 @@ class GhidraGdb:
             
     def analyze(self, funcs):
 
-        """!brief: Analyze the Ghidra project - this command will create all the functions, breakpoints and classes from the Ghidra Code/Comments
-        @param funcs: A list of functions which are to be analyzed
-        @return: None
+        """Analyze the Ghidra project - this command will create all the functions, breakpoints and classes from the Ghidra Code/Comments
+
+        :param funcs: A list of functions which are to be analyzed
+        :return: None
         """
 
         self.client.analyze(funcs)
@@ -286,8 +295,9 @@ class GhidraGdb:
 
     def runtimeAnalysis(self):
 
-        """!@brief: This function runs arbitrary code in either python or GDB everytime a breakpoint is hit
-        @return: None
+        """This function runs arbitrary code in either python or GDB everytime a breakpoint is hit
+
+        :return: None
         """
 
         #the first breakpoint has to install the other breakpoints - then continue ...
@@ -350,8 +360,9 @@ class GhidraGdb:
 
     def runtimeAnalysisNonBlock(self):
 
-        """!@brief: Run the function 'runtimeAnalysis' in Non-blocking mode
-        @return: None
+        """Run the function 'runtimeAnalysis' in Non-blocking mode
+
+        :return: None
         """
 
         Thread(target=self.runtimeAnalysis, daemon=True).start()
@@ -359,8 +370,9 @@ class GhidraGdb:
     #check if current thread is running ... (if gdb hits breakpoint ...)
     def checkThreadRunning(self):
 
-        """!@brief: check if the current GDB Thread is running
-        @return: Boolean - True if the Thread is running
+        """check if the current GDB Thread is running
+
+        :return: Boolean - True if the Thread is running
         """
 
         #Todo -- check this
