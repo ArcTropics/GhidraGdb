@@ -31,8 +31,6 @@ class GhidraGdb:
         self.currRet = None
 
 
-
-    ### Todo: use print function to determine the real EOF of the stream
     def excAndGet(self, exc):
 
         self.currRet = ""
@@ -45,7 +43,21 @@ class GhidraGdb:
             time.sleep(0.01)
 
         return self.currRet.split("\n$")[0]
-        
+
+    ### Todo: The upper one of these solutions did not work to enumerate Breakpoints - find out why
+    def excAndGet2(self, exc):
+
+        self.currRet = ""
+        self.parserMode = "GETDAT"
+
+        self.gdb.execute(exc.split("\n")[0])
+
+        self.gdb.execute("print \"ggdb__EOF\"")
+
+        while self.parserMode == "GETDAT":
+            time.sleep(0.01)
+
+        return self.currRet
         
     def readFifo(self, fifo):
         while True:
