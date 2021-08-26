@@ -9,6 +9,9 @@ from clients.GhidraCommandClient import GhidraCommandClient
 
 class GhidraGdb:
 
+    """!@brief: The main class which encapsulates the whole GhidraGdb framework
+    """
+
     FIFO = "/tmp/gdbPipe"
     
     def __init__(self, process=None):
@@ -32,11 +35,23 @@ class GhidraGdb:
 
 
     def removeBpByPattern(self, pattern):
+
+        """!@brief: removes a breakpoint before it is inserted
+        @param pattern: the pattern to identify the breakpoint
+        @return: None
+        """
         self.removals.append(pattern)
         
         
 
-    def excAndGet(self, exc):
+    def excAndGet(self, exc, strip=True):
+
+        """!
+        @brief: This function executes a command within the gdb session
+        @param exc: String value containing the gdb command
+        @param strip: Boolean, optional - remove the EOF delimiter automatically(this might create issues in some cases) - default: True
+        @return: String value containing the gdb response unparsed
+        """
 
         self.currRet = ""
         self.parserMode = "GETDAT"
@@ -47,28 +62,20 @@ class GhidraGdb:
         while self.parserMode == "GETDAT":
             time.sleep(0.01)
 
-        return self.currRet.split("$")[0]
+        if strip:
+            return self.currRet.split("$")[0]
+        else:
+            return self.currRet
 
-
-    ### Todo: The upper one of these solutions did not work to enumerate Breakpoints - find out why
-    def excAndGet2(self, exc):
-
-        self.currRet = ""
-        self.parserMode = "GETDAT"
-
-        
-        self.gdb.execute(exc.split("\n")[0])
-        
-        
-        self.gdb.execute("print \"ggdb__EOF\"")
-        
-        while self.parserMode == "GETDAT":
-            time.sleep(0.01)
-
-        return self.currRet
 
     
     def readFifo(self, fifo):
+
+        """!@brief: read the ouput of the gdbPipe te receive the data
+        @param fifo: the fifo object to read from
+        @return: None
+        """
+
         while True:
             #time.sleep(0.05)
             line = fifo.readline()
@@ -88,6 +95,12 @@ class GhidraGdb:
                         self.parserMode = "WAITBP"
 
     def setupFifo(self, FIFO):
+
+        """!@brief: create the Fifo which is used to read the data comming from the gdb
+        @param FIFO: The filename where the fifo will be created
+        @return: None
+        """
+
         print("setting up fifo now: " + str(FIFO))
         with open(FIFO, 'r') as fifo:
             self.fifo = fifo
@@ -95,16 +108,31 @@ class GhidraGdb:
             self.readFifo(fifo)
 
     def setupFifoNonBlock(self, Fifo):
+
+        """!@brief: Run the function "setupFifo" in None-blocking mode
+        @param FIFO: The filename where the fifo will be created
+        @return: None
+        """
+
         Thread(target=self.setupFifo, args=(Fifo,), daemon=True).start()
 
 
     def setupGdbInteractive(self):
+
+        """!@brief: Setup the GdbSession as an interactive shell(the user can interact with GDB as usual) - Non-blocking
+        @return: None
+        """
+
         Thread(target=self.process.interactive).start() 
 
 
     def getProcOffset(self, procName):
 
-        print("waiting for thread")
+        """!@brief get the Proc Offset of a particular mapping
+        @param procName: String value containing the Name of the mapping
+        @return: The start Address of the mapped space
+        """
+
         while self.checkThreadRunning():
             time.sleep(0.05)
 
@@ -142,6 +170,14 @@ class GhidraGdb:
         return procStartAddresss
     
     def run(self, cmd, interactive=True, startCommands="", args=""):
+
+        """!@brief: This is the entry functioon that spawns a new process and connects the debugger to it
+        @param cmd: String value containing the path to your executable
+        @param interactive: Boolean, optional - open a regular GDB Window which the user can interact with. Default: True
+        @param startCommands: Sting - Initial GDB Commands which are executed before the program starts
+        @param args: String - Arguments to start the executable with
+        @return: None
+        """
 
         #connect reader thread to read gdb pipe
         self.setupFifoNonBlock(self.FIFO)
@@ -217,6 +253,12 @@ class GhidraGdb:
 
     def setupGdb(self, interactive=True, startCommands=""):
 
+        """ Deprecated - attaches the gdb to an existing program instance instead of spawning the program
+        @param interactive: interactive: Boolean, optional - open a regular GDB Window which the user can interact with. Default: True
+        @param startCommands: Sting - Initial GDB Commands which are executed before the program starts
+        @return: None
+        """
+
         #connect reader thread to read gdb pipe
         self.setupFifoNonBlock(self.FIFO)
 
@@ -232,11 +274,21 @@ class GhidraGdb:
         self.runtimeAnalysisNonBlock()
             
     def analyze(self, funcs):
+
+        """!brief: Analyze the Ghidra project - this command will create all the functions, breakpoints and classes from the Ghidra Code/Comments
+        @param funcs: A list of functions which are to be analyzed
+        @return: None
+        """
+
         self.client.analyze(funcs)
         
 
 
     def runtimeAnalysis(self):
+
+        """!@brief: This function runs arbitrary code in either python or GDB everytime a breakpoint is hit
+        @return: None
+        """
 
         #the first breakpoint has to install the other breakpoints - then continue ...
         while self.checkThreadRunning():
@@ -297,10 +349,20 @@ class GhidraGdb:
         
 
     def runtimeAnalysisNonBlock(self):
+
+        """!@brief: Run the function 'runtimeAnalysis' in Non-blocking mode
+        @return: None
+        """
+
         Thread(target=self.runtimeAnalysis, daemon=True).start()
 
     #check if current thread is running ... (if gdb hits breakpoint ...)
     def checkThreadRunning(self):
+
+        """!@brief: check if the current GDB Thread is running
+        @return: Boolean - True if the Thread is running
+        """
+
         #Todo -- check this
         try:
 
