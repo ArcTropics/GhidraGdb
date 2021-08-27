@@ -10,14 +10,30 @@ import termios, fcntl, sys, os
 
 class GdbTimeLapse:
 
+    """This class allows to append "snapshots"(Strings) that can be opened scrolled through
+    Info - this class requires xfce4-terminal to be installed
+    """
 
     def __init__(self):
         self.tl = []
 
     def append(self, frame):
+
+        """ Append a frame/snapshot
+
+        :param String frame: the frame to append
+        :return: None
+        """
+
         self.tl.append(frame)
 
     def view(self):
+
+        """View all the captured frames as timelapse
+
+        :return: None
+        """
+
         file = open("/tmp/tmpfile", 'w')
         file.write(str(self.tl))
         file.close()
