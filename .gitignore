@@ -9,3 +9,4 @@ __pycache__
 doc/_modules
 doc/build
 doc/source/plugins
+doc/source/clients

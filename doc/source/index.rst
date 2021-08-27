@@ -9,7 +9,7 @@ Welcome to GhidraGdb's documentation!
 
    modules
    plugins/modules
-
+   clients/modules
 
 Indices and tables
 ==================

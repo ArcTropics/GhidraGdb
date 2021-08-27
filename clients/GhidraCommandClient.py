@@ -13,19 +13,23 @@ otp.init_()
 
 
 class GhidraFunction:
+
+    """A function of Type Ghidra function - can hold several GhidraVariables, Breakpoints and other classes
+    """
     
     def __init__(self):
         self.vars = []
         self.currentBreakpoint = None
 
-
-class RegisterVal:
-
-    def __init__(self, name, val):
-        self.name = name
-        self.val = val
         
 class GhidraBreakpoint:
+
+    """A class representing a breakpoint in Ghidra. This class might hold several different attributes, such as:
+    - the address in the code where the Breakpoint is located ad
+    - A function to which this breakpoint belongs
+    - a stack object representing the current stack state
+    - executable instructions for GDB or python which are executed once the breakpoint is hit
+    """
     
     def __init__(self, lineNr, func, offset = 0):
         tl = GdbTimeLapse()
@@ -45,15 +49,36 @@ class GhidraBreakpoint:
 
 
     def rebuiltWithOffset(self, offset):
+
+        """Recalculate the offset of the breakpoint based on a given offset
+
+        :param Hex,String offset: the offset to 0 which the main executable holds in the memory map
+        :return: Nobe
+        """
+
         self.address = self.getAddress(self.lineNr, offset)
         self.setup = "b *" + str(self.address)
 
 
     def find(self, lineNr):
+
+        """Find the total Address of a line Nr in the given function
+
+        :param Int lineNr: the line number in Ghidra
+        :return: The Address of the position
+        """
+
         return self.getAddress(lineNr, self.offset)
 
 
     def getAddress(self, lineNr, offset):
+
+        """ Get the address of a line Nr taking in account the current offset
+
+        :param Int lineNr: The line number in Ghidra
+        :param offset: The offset of the main executable in the proc mappings
+        :return: Hex value of the Address
+        """
 
         self.offset = offset
 
@@ -64,16 +89,32 @@ class GhidraBreakpoint:
         if offset == 0:
             return "0x" + lineNr
         else:
-            return  str(hex(int(lineNr, 16) + offset))
+            return str(hex(int(lineNr, 16) + offset))
 
 
 
     def c(self):
+
+        """Continue Execution
+
+        :return: None
+        """
+
+        #Todo: why deactivate
         self.deactivate()
         self.func.client.ggdb.gdb.execute("c")
 
 
     def getRegisterVal(self, reg, ggdb):
+
+        """Get the value of a register
+
+        :param String reg: The name of the register to get the value from, e.g "ebp"
+        :param ggdb: the ggdb instance
+        :return: Hex value contained in the register
+        """
+
+        #Todo: do we really need the ggdb parameter?
 
         #print("GET REG VAL: " + str(reg))
         #check if this register has already been read for this breakpoint
@@ -91,6 +132,8 @@ class GhidraBreakpoint:
         for line in retur.split("\n"):
             if reg in line:
                 self.currentRegisters = retur
+
+                #Todo: ebp is not generic
                 ebpStr = line
                 while "  " in ebpStr:
                     ebpStr = ebpStr.replace("  ", " ")
@@ -102,10 +145,24 @@ class GhidraBreakpoint:
                 return fin
 
     def setHitLimit(self, limit=100):
+
+        """Set a Limit to this breapoint after which the breakpoint gets deactivated
+
+        :param Int limit: The maximum amount of hits the breakpoint will get
+        :return: None
+        """
+
         self.hitLimit = limit
 
 
     def getRegisterValInt(self, reg):
+
+        """Get the value of a register as int
+
+        :param String reg: The name of the register to get the value from, e.g "ebp"
+        :return: Integer value contained in the register
+        """
+
         try:
             ret = self.getRegisterVal(reg, self.func.client.ggdb)
             return int(str(ret), 16)
@@ -114,12 +171,24 @@ class GhidraBreakpoint:
             return None
 
     def disable(self):
+
+        """ Disables the breakpoint - Not yet implemented!!!
+
+        :return: None
+        """
+
+        #Todo: implement this!
         print(self.gdbGet("d " + str(self.number)))
         self.gdbGet("i b")
 
 
 
     def hit(self):
+
+        """Call this function when breakpoint is hit
+
+        :return:
+        """
 
         self.func.currentBreakpoint = self
 
@@ -128,30 +197,81 @@ class GhidraBreakpoint:
             print("call deact")
             self.disable()
 
+
+    #Todo ... Naming ... !
     def deactivate(self):
+
+        """ Called after breakpoint execution is done
+
+        :return: None
+        """
+
         self.currentRegisters = ""
 
     def dbAppend(self, db):
+
+        """Appends a debugger command
+
+        :param String db: the debugger command
+        :return: None
+        """
+
         self.dbExc = self.dbExc + str(db) + "\n"
 
     def getRegisterValX(self, reg):
+
+        """Get the value of a register as Hex
+
+        :param String reg: The name of the register to get the value from, e.g "ebp"
+        :return: Integer value contained in the register
+        """
+
         ggdb = self.func.client.ggdb
         return "0x" + self.getRegisterVal(reg, ggdb)
 
     def getWordX(self, addr):
+
+        """Get a word (32 bit) of data from the memory
+
+        :param addr: The Address from where to read
+        :return: The Word as Hex
+        """
+
         ggdb = self.func.client.ggdb
         result = ggdb.excAndGet("x/1wx "+str(addr))
         return result.split('\t')[1]
 
     def getLongX(self, addr):
+
+        """Get a Long (64 bit) of data from the memory
+
+        :param addr: The Address from where to read
+        :return: The Long as Hex
+        """
+
         ggdb = self.func.client.ggdb
         result = ggdb.excAndGet("x/1g "+str(addr))
         return result.split('\t')[1]
 
     def pyExec(self, exc):
+
+        """Append python command to be executed when this breakpoint is hit
+
+        :param String exc: The command
+        :return: Nonw
+        """
+
         self.pyExc = self.pyExc + exc + "\n"
 
     def gdbGet(self, exc, prnt=False):
+
+        """Execute a a command in Gdb and return the resulting output
+
+        :param String exc: The GDB Command
+        :param Boolean prnt: optional print the command before executing it - default: False
+        :return: The result of the GDB call as String
+        """
+
         if prnt:
             print("gdbPrint(" + str(exc) + ")")
 
@@ -161,7 +281,16 @@ class GhidraBreakpoint:
             print(result)
         return result
 
+    #Todo: Why 2??
     def gdbGet2(self, exc, prnt=False):
+
+        """Execute a a command in Gdb and return the resulting output
+
+        :param String exc: The GDB Command
+        :param Boolean prnt: optional print the command before executing it - default: False
+        :return: The result of the GDB call as String
+        """
+
         if prnt:
             print("gdbPrint(" + str(exc) + ")")
 
@@ -173,6 +302,14 @@ class GhidraBreakpoint:
 
 
     def gdbPrint(self, exc, prnt=True):
+
+        """ Execute a GDB Command and print the result
+
+        :param String exc: The GDB Command
+        :param Boolean prnt: optional print the command before executing it - default: False
+        :return: The result of the GDB call as String
+        """
+
         if prnt:
             print("gdbPrint(" + str(exc) + ")")
 
@@ -183,6 +320,13 @@ class GhidraBreakpoint:
         return result
 
     def exec_(self, exc):
+
+        """Executes code in the context of this module
+
+        :param exc: the command to be executed
+        :return: None
+        """
+
         try:
             exec(exc)
         except Exception as e:
@@ -191,6 +335,16 @@ class GhidraBreakpoint:
             traceback.print_exc()
 
     def stackPrint(self, size):
+
+        """Prints current stack
+        Note: This is a very basic stack print - for more specific results use the class GhidraStack
+        - you can add the variables to the stack and examine them
+        - does very well in combination with a timelapse
+
+        :param Int size: The size of the stack to be printed
+        :return: The resulting stack as String
+        """
+
         ggdb = self.func.client.ggdb
         stk = self.getRegisterValInt("rbp")#TODO: switch this to ebp for 32bit architecture
         stk = stk - size
@@ -200,21 +354,43 @@ class GhidraBreakpoint:
 
     def stackAddFuncVars(self, funcName):
 
+        """Add a function name to the current stack frame
+
+        :param String funcName: the name of the function to add to the stack
+        :return: None
+        """
+
         for func in self.func.client.functions:
             if funcName in func.name:
                 for var in func.vars:
                     self.stack.addVar(var, func)
 
     def stackAddAllVars(self):
+
+        """ Add all known Variables of the current function to the stack
+
+        :return: None
+        """
+
         for var in self.func.vars:
             #print("adding var" + var.name + "at address: " +  var.getVariablePosition())
             self.stack.addVar(var, self.func)
 
     def stackAddLabel(self, label, address):
+
+        """Add a label for the stack
+
+        :param Sting label: The name of the label
+        :param address: The address where the Label is located
+        :return: None
+        """
+
         self.stack.addLabel(label,address)
 
 #could have Auto  Add
 class GhidraStack:
+
+    """This class may be used to analyze the stack state"""
 
     def __init__(self, ggdb):
         self.stackString = ""
@@ -223,6 +399,14 @@ class GhidraStack:
         self.ggdb = ggdb
 
     def addVar(self, var, func = None):
+
+        """Add Variable to the current state
+
+        :param GhidraVar var: The Variable to add to the stack
+        :param GhidraFunc func: The function in which the Variable is defined
+        :return: None
+        """
+
         #first we get the position of the variable
         self.varPositions.append(var.getVariablePosition())
         try:
@@ -236,11 +420,29 @@ class GhidraStack:
             self.varNames.append(var.name)
 
     def addLabel(self, label, address):
+
+        """Add a custom label to the stack
+
+        :param String label: The name of the label to be added
+        :param address: The address of the label
+        :return: None
+        """
+
         self.varPositions.append(address)
         self.varNames.append(label)
 
     #todo - integer conversion not yet working
+    #Todo - implement for 64 bit also
     def examine(self, baseAddr, numWords, verbose = False):
+
+        """Print a detailed overview of the stack - outlining all the variables that have been added for stack examination
+
+        :param baseAddr: The address from where the stack is to be examined
+        :param numWords: The number of words to be examined
+        :param Boolean verbose: print verbose logs(for debugging)
+        :return: The resulting stack snapsot as string
+        """
+
 
         #convert to integer if it is hex
         if len(str(baseAddr).split("x")) > 1:
@@ -284,11 +486,20 @@ class GhidraStack:
 
 class GhidraVar:
 
+    """This class represents a Variable in Ghidra"""
+
     def __init__(self):
         self.addr_ = 0
 
 
     def getVariablePosition(self):
+
+        """Get the position of the variable
+
+        :return: None
+        """
+
+        #Todo full 32bit - 64bit support
 
         if self.addr_ != 0:
             print("returning right awaz")
@@ -320,6 +531,13 @@ class GhidraVar:
 
     def x(self, prnt = False):
 
+        """Get the position of the variable as hex
+
+        :param prnt: print details - debugging
+        :return: String representation of hex number
+        """
+
+        #Todo: check for 32bit - 64b it support
 
         ##getting ebp register
         ggdb = self.func.client.ggdb
@@ -343,21 +561,27 @@ class GhidraVar:
             return("0x" + str(tmp))
 
     def addr(self):
+        #Todo - why two functions
         return self.getVariablePosition()
 
     def addrX(self):
+        # Todo - why two functions
         return "0x" + str(hex(self.addr()))
 
     def d(self):
+        # Todo - again - overthink this
         return int(self.x().split("x")[1], 16)
 
 
 class GhidraGlobals:
+    #Todd: Needed?
     pass
 
 
 
 class GhidraCommandClient:
+
+    """The Ghidra Command Client acts as a bridge between python and a Ghidra instance"""
 
     #class GhidraComment:
     def __init__(self, ggdb):
@@ -409,7 +633,16 @@ class GhidraCommandClient:
 
 
 
-    def addBp(self, function, cmd):
+    def addBp(self, function):
+
+        """Add a breakpoint
+
+        :param function: kp
+        :return:
+        """
+
+        #Todo: is this needed?
+
         for func in self.functions:
             if func.name == function:
                 print("Adding breakpoint to function: " + str(function))
@@ -420,6 +653,14 @@ class GhidraCommandClient:
 
 
     def analyzeComment(self, comment, func):
+
+        """Analyze Comment and extract breakpoints if needed
+
+        :param String comment: The PRE comment, coming from Ghidra
+        :param GhidraFunction func: the function from which the Breakpoint has been created
+        :return: The Breakpoint of type GhidraBreakpoint - if created - otherwise None
+        """
+
         print("ANALYZING COMMENT")
         breakpoints = []
         for i, line in enumerate(comment[0].split("\n")):
@@ -453,6 +694,11 @@ class GhidraCommandClient:
 
     def analyze(self, functions):
 
+        """Analyze a given set of function and generate the breakpoints that are found
+
+        :param [String] functions: Array giving the function names to be analyzed
+        :return: None
+        """
 
         #self.allFuncs = self.br.remote_exec("cmds.enumerateFunctions()")
         #for func in self.allfuncs:
@@ -511,6 +757,8 @@ class GhidraCommandClient:
 
     def enumerateFunctions2(self):
 
+        #Todo: in use?
+
         print("enumerate functions now")
         func = getFirstFunction()
         while func is not None:
@@ -519,6 +767,8 @@ class GhidraCommandClient:
 
 
     def enumerateFunctions2(self):
+
+        # Todo: in use?
         currentProgram = getState.getCurrentProgram()
 
         fm = currentProgram.getFunctionManager()
@@ -529,6 +779,8 @@ class GhidraCommandClient:
 
     def getFunc(self, name):
 
+        # Todo: in use?
+
         for func in self.funcs:
             #print("Function: {} @ 0x{}".format(func.getName(), func.getEntryPoint()))
             if name in func.getName():
@@ -538,6 +790,8 @@ class GhidraCommandClient:
 
 
     def getFunc2(self, name):
+
+        # Todo: in use?
         name_list = self.br.remote_eval("[ f for f in currentProgram.getFunctionManager().getFunctions(True)]")
         #print(name_list)
         for name2 in name_list:
@@ -547,7 +801,7 @@ class GhidraCommandClient:
         return None
 
     def getVars(self):
-
+        # Todo: in use?
         func_name = "DoMainStuff"
         for i in range(2):
             func = self.getFunc2(func_name)
