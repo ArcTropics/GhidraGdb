@@ -373,14 +373,14 @@ class GhidraCommandClient:
         self.br.remote_exec("sys.path.append(\"/media/simon/tools/ghidra/plugins\")")
 
         #import Ghidra CmdServer
-        self.br.remote_exec("from GhidraCommandServer import CmdServer")
+        self.br.remote_exec("from GhidraCommandServer import GhidraCommandServer")
 
         #reload Ghidra Command Server
         self.br.remote_exec("reload(sys.modules[\"GhidraCommandServer\"])")
-        self.br.remote_exec("from GhidraCommandServer import CmdServer")
+        self.br.remote_exec("from GhidraCommandServer import GhidraCommandServer")
 
         #
-        self.br.remote_exec("cmds = CmdServer(getState())")
+        self.br.remote_exec("cmds = GhidraCommandServer(getState())")
 
         self.globals = GhidraGlobals()
         self.functions = []

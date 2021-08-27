@@ -1,10 +1,19 @@
-from ghidra.app.decompiler import DecompileOptions
-from ghidra.app.decompiler import DecompInterface
-from ghidra.util.task import ConsoleTaskMonitor
-from ghidra.program.model.listing import CodeUnit
+
+#Note:
+# This is unconventional, however,  this is running as a remote module WITHIN Ghidra.
+# These module are not available in a local python environment
+# this is why the documentation generation through sphinx will fail. The try catch statement here avoids this
+
+try:
+    from ghidra.app.decompiler import DecompileOptions
+    from ghidra.app.decompiler import DecompInterface
+    from ghidra.util.task import ConsoleTaskMonitor
+    from ghidra.program.model.listing import CodeUnit
+except:
+    pass
 
 # Method 1:
-class CmdServer():
+class GhidraCommandServer:
 
     def __init__(self, state):
         self.state = state
@@ -12,6 +21,11 @@ class CmdServer():
         
     
     def enumerateFunctions2(self):
+
+        """Enumerates all existing functions that are known to ghidra
+
+        :return: None
+        """
 
         print("enumerate functions now")
         func = getFirstFunction()
@@ -21,6 +35,12 @@ class CmdServer():
 
 
     def enumerateFunctions(self):
+
+        """Enumerates all existing functions that are known to ghidra
+
+        :return: None
+        """
+
         currentProgram = getState().getCurrentProgram()
         
         fm = currentProgram.getFunctionManager()
@@ -30,6 +50,13 @@ class CmdServer():
         
 
     def getFunc(self, name):
+
+        """Iterates through all the existing functions that are known to Ghidra and returns the match
+
+        :param String name: The Name of the function to get
+        :return: The Object of Type GhidraFunction
+        """
+
         currentProgram = self.state.getCurrentProgram()
         
         fm = currentProgram.getFunctionManager()
@@ -44,6 +71,13 @@ class CmdServer():
             
 
     def getVars(self, funcName):
+
+        """ Get all the Variables from a function with the given name
+
+        :param String funcName: The name of the target function
+        :return: An Array of Arrays containing all the known Attributes for each GhidraVar
+        """
+
 
         print("hello world from getVars")
         func = self.getFunc(funcName)
@@ -77,11 +111,17 @@ class CmdServer():
             except:
                 pass
 
-        print("habe fertig3")
         return temp
 
 
     def getComments(self, funcName):
+
+        """Get all the PRE-Comments for a given Function name
+
+        :param String funcName: The name of the target function
+        :return: Array of strings containing the comments
+        """
+
         currentProgram = self.state.getCurrentProgram()
 
         listing = currentProgram.getListing()

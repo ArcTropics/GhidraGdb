@@ -8,3 +8,4 @@ __pycache__
 #documentation
 doc/_modules
 doc/build
+doc/source/plugins

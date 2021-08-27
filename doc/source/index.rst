@@ -8,6 +8,7 @@ Welcome to GhidraGdb's documentation!
    :caption: Contents:
 
    modules
+   plugins/modules
 
 
 Indices and tables
